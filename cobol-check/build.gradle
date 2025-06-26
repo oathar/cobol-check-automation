@@ -1,0 +1,195 @@
+import static org.apache.tools.ant.taskdefs.condition.Os.*
+
+plugins {
+    id 'java-library'
+    id 'org.sonarqube' version '3.0'
+    id 'jacoco'
+}
+
+def productVersion = '0.1.0'
+def productName = 'cobolcheck'
+group = 'com.neopragma'
+description = 'Unit testing framework for Cobol'
+
+def approvalExpectedOutput = "approval-test-expected.txt"
+def approvalActualOutput = "approval-test-actual.txt"
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "neopragma_cobol-check"
+        property "sonar.organization", "neopragma-github"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.exclusions", "**/EIBResponseCodes.java,**/Keyword.java"
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.6"
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            limit {
+                minimum = 0.8
+            }
+            excludes = ['*Constants',
+                        '*Exception',
+                        '*DirectoryNameMatcher',
+                        '*Driver',
+                        '*EIBResponseCodes',
+                        '*Exception*',
+                        '*Generator',
+                        '*Keyword',
+                        '*LinuxProcessLauncher',
+                        '*Log',
+                        '*Flag',
+                        '*StringHelper',
+                        '*TestSuiteConcatenator']
+        }
+        rule {
+            element = 'CLASS'
+            limit {
+                minimum = 0.2
+            }
+            includes = ['*LinuxProcessLauncher',
+                        '*TestSuiteConcatenator']
+        }
+    }
+}
+
+ext {
+    mainClassName = 'com.neopragma.cobolcheck.Driver'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources", "src/test/resources"
+        }
+    }
+}
+
+test {
+    description 'Runs all tests'
+    testLogging {
+        showStandardStreams = true
+        events "passed", "skipped", "failed"
+    }
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:deprecation'
+    options.deprecation = true
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:15.0'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.6.1')
+    testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
+    testImplementation 'org.mockito:mockito-core:3.6.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.6.28'
+}
+
+def unitTest = tasks.register("unitTest", Test) {
+    description 'Run unit tests only'
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching "com.neopragma.cobolcheck.*Test"
+    }
+}
+def integrationTest = tasks.register("integrationTest", Test) {
+    description 'Run integration tests only'
+    dependsOn unitTest
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching "com.neopragma.cobolcheck.*IT"
+    }
+}
+
+task fatJar(type: Jar) {
+    description 'Create executable jar'
+    dependsOn integrationTest
+    manifest {
+        attributes 'Main-Class': "${mainClassName}"
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task copyJar(type: Copy) {
+    description 'Copy executable jar to bin directory prior to distribution'
+    dependsOn fatJar
+    from('build/libs/')
+      include '**/*.jar'
+    into 'bin/'
+}
+
+task prepareDistribution(type: Zip) {
+    description 'Prepare distribution archive'
+    dependsOn copyJar
+    from "${projectDir}"
+    include([ "config.properties",
+              "scripts/*",
+              "bin/cobol-check-${productVersion}.jar",
+              "src/main/cobol/ALPHA.CBL",
+              "src/main/cobol/NUMBERS.CBL",
+              "src/test/cobol/ALPHA/*",
+              "src/test/cobol/NUMBERS/*",
+              "cobolcheck",
+              "cobolcheck.cmd" ])
+    rename("build/libs/(.*)", "\$1")
+}
+
+def approvalTest = tasks.register("approvalTest", Test) {
+    description 'Run approval test only'
+    dependsOn fatJar
+    doLast {
+        if ("${OS_NAME}" == "linux") {
+            println "Linux detected"
+            def proc = "./approvaltest".execute()
+            proc.waitForProcessOutput(System.out, System.err)
+            proc = "diff ${approvalExpectedOutput} ${approvalActualOutput}".execute()
+            proc.waitForProcessOutput(System.out, System.err)
+
+            println "exit code from diff: ${proc.exitValue()}"
+            if (proc.exitValue() > 0) {
+                throw new StopExecutionException("${approvalExpectedOutput} and ${approvalActualOutput} are different")
+            } else {
+                println "${approvalExpectedOutput} matches ${approvalActualOutput} - PASS"
+            }
+        }
+    }
+}
+
+task defaultProperties {
+    description 'Show the default properties for this project'
+    println "Project: $project"
+    println "Name: $name"
+    println "Path: $path"
+    println "Project directory: $projectDir"
+    println "Build directory: $buildDir"
+    println "Version: $version"
+    println "Group: $project.group"
+    println "Description: $project.description"
+}
+
+task osInfo {
+    description 'Show information about the operating system'
+    doLast {
+        println "Family:       ${OS_NAME}"
+        println "Version:      ${OS_VERSION}"
+        println "Architecture: ${OS_ARCH}"
+    }
+}
