@@ -26,6 +26,10 @@ jobs:
           ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
           ZOSMF_HOST: ${{ secrets.ZOSMF_HOST }}
           ZOSMF_PORT: ${{ secrets.ZOSMF_PORT }}
+          ZOWE_ZOSMF_HOST: ${{ secrets.ZOSMF_HOST }}
+          ZOWE_ZOSMF_PORT: ${{ secrets.ZOSMF_PORT }}
+          ZOWE_ZOSMF_USER: ${{ secrets.ZOWE_USERNAME }}
+          ZOWE_ZOSMF_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
         run: |
           chmod +x .github/scripts/zowe_operations.sh
           .github/scripts/zowe_operations.sh
