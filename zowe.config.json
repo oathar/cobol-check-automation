@@ -1,0 +1,6 @@
+{
+    "profiles": {
+        "zosmf": "zosmf-profile"
+    },
+    "defaults": {}
+}

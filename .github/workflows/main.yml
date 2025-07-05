@@ -14,7 +14,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'  # Required input to fix the error
+          distribution: 'temurin'
           java-version: '11'
 
       - name: Install Zowe CLI
@@ -24,6 +24,8 @@ jobs:
         env:
           ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
           ZOWE_PASSWORD: ${{ secrets.ZOWE_PASSWORD }}
+          ZOSMF_HOST: ${{ secrets.ZOSMF_HOST }}
+          ZOSMF_PORT: ${{ secrets.ZOSMF_PORT }}
         run: |
           chmod +x .github/scripts/zowe_operations.sh
           .github/scripts/zowe_operations.sh
