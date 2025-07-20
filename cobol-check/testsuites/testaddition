@@ -1,0 +1,7 @@
+        TESTSUITE 'Addition Test Suite'
+
+        TESTCASE 'Test A + B = 5'
+           MOVE 2 TO A
+           MOVE 3 TO B
+           PERFORM 0000-ADDITION
+           EXPECT C TO BE 5
