@@ -2,8 +2,8 @@
        PROGRAM-ID. SUB.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 A PIC 9 VALUE 2.
-       01 B PIC 9 VALUE 3.
+       01 A PIC 9 VALUE 5.
+       01 B PIC 9 VALUE 2.
        01 C PIC 9.
 
        PROCEDURE DIVISION.
