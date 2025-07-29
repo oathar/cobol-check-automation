@@ -1,0 +1,12 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SUB.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 A PIC 9 VALUE 2.
+       01 B PIC 9 VALUE 3.
+       01 C PIC 9.
+
+       PROCEDURE DIVISION.
+           SUBTRACT  A FROM B GIVING C
+           DISPLAY "A - B = " C
+           GOBACK.
